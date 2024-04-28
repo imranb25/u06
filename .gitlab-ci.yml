@@ -1,0 +1,30 @@
+stages:
+  - lint
+  - test
+  - build
+
+flake8:
+  stage: lint
+  image: python:3.9
+  script:
+    - pip install flake8
+    - flake8 .
+
+unit_tests:
+  stage: test
+  image: python:3.9
+  script:
+    - pip install -r requirements.txt
+    - python -m unittest discover -s . -p '*_test.py'
+
+build_docker_image:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
